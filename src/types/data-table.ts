@@ -17,6 +17,7 @@ declare module "@tanstack/react-table" {
     range?: [number, number];
     unit?: string;
     icon?: React.FC<React.SVGProps<SVGSVGElement>>;
+    enableGroupBy?: boolean;
   }
 }
 
@@ -26,6 +27,7 @@ export interface QueryKeys {
   sort: string;
   filters: string;
   joinOperator: string;
+  groupBy?: string;
 }
 
 export interface Option {

@@ -97,3 +97,22 @@ export const getFiltersStateParser = <TData>(
       ),
   });
 };
+
+// 新增：GroupBy 解析器
+export const getGroupByParser = <TData>(columnIds?: string[] | Set<string>) => {
+  const validKeys = columnIds
+    ? columnIds instanceof Set
+      ? columnIds
+      : new Set(columnIds)
+    : null;
+
+  return createParser({
+    parse: (value) => {
+      if (!value) return "";
+      if (validKeys && !validKeys.has(value)) return "";
+      return value as Extract<keyof TData, string>;
+    },
+    serialize: (value) => value,
+    eq: (a, b) => a === b,
+  });
+};

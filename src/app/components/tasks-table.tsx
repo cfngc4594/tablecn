@@ -1,14 +1,17 @@
 "use client";
 
+import { useQueryState } from "nuqs";
 import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableAdvancedToolbar } from "@/components/data-table/data-table-advanced-toolbar";
 import { DataTableFilterList } from "@/components/data-table/data-table-filter-list";
 import { DataTableFilterMenu } from "@/components/data-table/data-table-filter-menu";
+import { DataTableGroupBy } from "@/components/data-table/data-table-group-by";
 import { DataTableSortList } from "@/components/data-table/data-table-sort-list";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import type { Task } from "@/db/schema";
 import { useDataTable } from "@/hooks/use-data-table";
+import { getGroupByParser } from "@/lib/parsers";
 import type { DataTableRowAction, QueryKeys } from "@/types/data-table";
 import type {
   getEstimatedHoursRange,
@@ -58,6 +61,23 @@ export function TasksTable({ promises, queryKeys }: TasksTableProps) {
     [statusCounts, priorityCounts, estimatedHoursRange],
   );
 
+  // 获取可分组的列 ID
+  const groupableColumnIds = React.useMemo(() => {
+    return columns
+      .filter((col) => col.meta?.enableGroupBy)
+      .map((col) => col.id)
+      .filter(Boolean);
+  }, [columns]);
+
+  // 使用专门的 GroupBy 解析器
+  const [groupBy] = useQueryState(
+    "groupBy",
+    getGroupByParser<Task>(groupableColumnIds).withDefault("").withOptions({
+      clearOnDefault: true,
+      shallow: true,
+    }),
+  );
+
   const { table, shallow, debounceMs, throttleMs } = useDataTable({
     data,
     columns,
@@ -73,11 +93,13 @@ export function TasksTable({ promises, queryKeys }: TasksTableProps) {
     clearOnDefault: true,
   });
 
+  // 始终使用 DataTable，传递 groupBy 参数
   return (
     <>
       <DataTable
         table={table}
         actionBar={<TasksTableActionBar table={table} />}
+        groupBy={groupBy}
       >
         {enableAdvancedFilter ? (
           <DataTableAdvancedToolbar table={table}>
@@ -98,10 +120,12 @@ export function TasksTable({ promises, queryKeys }: TasksTableProps) {
                 throttleMs={throttleMs}
               />
             )}
+            <DataTableGroupBy table={table} />
           </DataTableAdvancedToolbar>
         ) : (
           <DataTableToolbar table={table}>
             <DataTableSortList table={table} align="end" />
+            <DataTableGroupBy table={table} />
           </DataTableToolbar>
         )}
       </DataTable>
